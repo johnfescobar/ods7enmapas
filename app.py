@@ -149,7 +149,7 @@ def obtener_nombre_columna_valor(nombre_indicador):
 
 st.markdown('<a id="inicio"></a><br><br>', unsafe_allow_html=True)
 
-st.image('img/encabezado.jpg')
+st.image('img/encabezado.png', use_container_width=True)
 st.html('<h2 style="color:#3D6E85;">Dashboard: ODS 7 en Mapas</h2>')
 st.caption(
     'Aplicación prototipo basada en indicadores del Banco Mundial (WDI) '
@@ -802,6 +802,7 @@ with st.sidebar.container():
         ''',
         unsafe_allow_html=True
     )
+    st.image('img/ods7_logo.png', width=150)
     st.html('<h4 style="color:#3D6E85;">Menú de navegación</h4>')
     st.markdown('[Inicio](#inicio)')
     st.markdown('[Acerca de los datos](#acerca-de)')
