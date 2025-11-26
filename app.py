@@ -293,16 +293,53 @@ with st.container(border=True):
         f'Datos disponibles para {len(df_anio_mapa)} países en el año {anio_seleccionado}.'
     )
 
-    figura_mapa = px.choropleth(
-        df_anio_mapa,
-        locations='country_code',
-        color=nombre_columna_valor_mapa,
-        hover_name='country_name',
-        color_continuous_scale='Viridis',
-        projection='natural earth',
-        title=f'{indicador_mapa} - {anio_seleccionado}',
-        labels={nombre_columna_valor_mapa: indicador_mapa}
-    )
+    # Construir paleta por bins de 0.5 desviaciones estándar (z-score)
+    serie = df_anio_mapa[nombre_columna_valor_mapa].astype(float)
+    mu = float(serie.mean()) if len(serie) else 0.0
+    sd = float(serie.std(ddof=1)) if len(serie) > 1 else 0.0
+    if sd > 0:
+        z = (serie - mu) / sd
+        bins = [-999, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 999]
+        labels_bins = [
+            '< -2σ', '-2σ a -1.5σ', '-1.5σ a -1σ', '-1σ a -0.5σ', '-0.5σ a 0σ',
+            '0σ a 0.5σ', '0.5σ a 1σ', '1σ a 1.5σ', '1.5σ a 2σ', '> 2σ'
+        ]
+        df_anio_mapa['z_bin'] = pd.cut(z, bins=bins, labels=labels_bins)
+        # Paleta divergente personalizada (azules bajas, rojos altas)
+        palette = {
+            '< -2σ': '#313695',
+            '-2σ a -1.5σ': '#4575b4',
+            '-1.5σ a -1σ': '#74add1',
+            '-1σ a -0.5σ': '#abd9e9',
+            '-0.5σ a 0σ': '#e0f3f8',
+            '0σ a 0.5σ': '#fee8c8',
+            '0.5σ a 1σ': '#fddbc7',
+            '1σ a 1.5σ': '#f4a582',
+            '1.5σ a 2σ': '#d6604d',
+            '> 2σ': '#b2182b'
+        }
+        figura_mapa = px.choropleth(
+            df_anio_mapa,
+            locations='country_code',
+            color='z_bin',
+            hover_name='country_name',
+            color_discrete_map=palette,
+            projection='natural earth',
+            title=f'{indicador_mapa} - {anio_seleccionado} (bins 0.5σ)',
+            labels={'z_bin': 'Desviación estándar (bins 0.5σ)'}
+        )
+    else:
+        # Fallback si la desviación estándar es 0: usar un color neutro
+        df_anio_mapa['z_bin'] = 'sin variación'
+        figura_mapa = px.choropleth(
+            df_anio_mapa,
+            locations='country_code',
+            color='z_bin',
+            hover_name='country_name',
+            color_discrete_map={'sin variación': '#cccccc'},
+            projection='natural earth',
+            title=f'{indicador_mapa} - {anio_seleccionado} (sin variación)'
+        )
     figura_mapa.update_layout(height=500)
 
     st.plotly_chart(figura_mapa, use_container_width=True)
